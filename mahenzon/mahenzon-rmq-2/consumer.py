@@ -27,10 +27,13 @@ def process_new_message(
     log.debug("properties: %s", properties)
     log.debug("body: %s", body)
 
-    log.info("[ ] Start processing message (expensive task!) %r", body)
+    log.warning("[ ] Start processing message (expensive task!) %r", body)
     start_time = time.time()
+
+    number = int(body[-2:])
+    is_odd = number % 2
     ...
-    time.sleep(0.1)
+    time.sleep(1 + is_odd * 2)
     ...
     end_time = time.time()
     log.info("[ ] Finished processing message %r, sending ack!", body)
@@ -43,17 +46,18 @@ def process_new_message(
 
 
 def consume_messages(channel: "BlockingChannel") -> None:
+    channel.basic_qos(prefetch_count=1)
     channel.basic_consume(
         queue=MQ_ROUTING_KEY,
         on_message_callback=process_new_message,
         # auto_ack=True,
     )
-    log.info("Waiting for messages...")
+    log.warning("Waiting for messages...")
     channel.start_consuming()
 
 
 def main():
-    configure_logging(level=logging.INFO)
+    configure_logging(level=logging.WARNING)
     with get_connection() as connection:
         log.info("Created connection: %s", connection)
         with connection.channel() as channel:
